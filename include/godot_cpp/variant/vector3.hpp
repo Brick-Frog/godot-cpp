@@ -97,6 +97,7 @@ struct [[nodiscard]] Vector3 {
 	_FORCE_INLINE_ real_t length_squared() const;
 
 	_FORCE_INLINE_ void normalize();
+	_FORCE_INLINE_ real_t normalize_get_len();
 	_FORCE_INLINE_ Vector3 normalized() const;
 	_FORCE_INLINE_ bool is_normalized() const;
 	_FORCE_INLINE_ Vector3 inverse() const;
@@ -510,6 +511,20 @@ void Vector3::normalize() {
 		x /= length;
 		y /= length;
 		z /= length;
+	}
+}
+
+real_t Vector3::normalize_get_len() {
+	real_t lengthsq = length_squared();
+	if (lengthsq == 0) {
+		x = y = z = 0;
+		return 0;
+	} else {
+		real_t length = Math::sqrt(lengthsq);
+		x /= length;
+		y /= length;
+		z /= length;
+		return length;
 	}
 }
 
