@@ -336,7 +336,7 @@ def generate_gdextension_interface_loader(interface_filepath, output_dir):
     header_filename = include_gen_folder / "gdextension_interface_loader.hpp"
     source_filename = source_gen_folder / "gdextension_interface_loader.cpp"
 
-    with open(interface_filepath, "rt") as file:
+    with open(interface_filepath, "rt", encoding="utf-8") as file:
         data = json.load(file)
 
     functions_by_version = {}
@@ -657,9 +657,8 @@ def generate_builtin_bindings(api, output_dir, build_config):
 
     # Create a header to implement all builtin class vararg methods and be included in "variant.hpp".
     builtin_vararg_methods_header = include_gen_folder / "builtin_vararg_methods.hpp"
-    builtin_vararg_methods_header.open("w+").write(
-        generate_builtin_class_vararg_method_implements_header(api["builtin_classes"])
-    )
+    with builtin_vararg_methods_header.open("w+", encoding="utf-8") as vararg_methods_file:
+        vararg_methods_file.write(generate_builtin_class_vararg_method_implements_header(api["builtin_classes"]))
 
 
 def generate_builtin_class_vararg_method_implements_header(builtin_classes):
@@ -1793,7 +1792,10 @@ def generate_engine_class_header(class_api, used_classes, fully_used_classes, us
         result.append("#include <godot_cpp/core/binder_common.hpp>")
         result.append("")
 
-    result.append("namespace godot {")
+    if class_name == "Mutex":
+        result.append("namespace godot::CoreBind {")
+    else:
+        result.append("namespace godot {")
     result.append("")
 
     for type_name in used_classes:
@@ -1953,6 +1955,9 @@ def generate_engine_class_header(class_api, used_classes, fully_used_classes, us
             "\tGroupID add_native_group_task(void (*p_func)(void *, uint32_t), void *p_userdata, int p_elements, int p_tasks = -1, bool p_high_priority = false, const String &p_description = String());"
         )
 
+    if class_name == "SceneTree":
+        result.append("\tstatic SceneTree *get_singleton();")
+
     if class_name == "Object":
         result.append("\ttemplate <typename T>")
         result.append("\tstatic T *cast_to(Object *p_object);")
@@ -2100,7 +2105,10 @@ def generate_engine_class_source(class_api, used_classes, fully_used_classes, us
 
         result.append("")
 
-    result.append("namespace godot {")
+    if class_name == "Mutex":
+        result.append("namespace godot::CoreBind {")
+    else:
+        result.append("namespace godot {")
     result.append("")
 
     if is_singleton:

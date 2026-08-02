@@ -73,7 +73,7 @@ MethodDefinition D_METHOD(StringName p_name, StringName p_arg1, Args... args) {
 class ClassDB {
 	static GDExtensionInitializationLevel current_level;
 
-	friend class godot::GDExtensionBinding;
+	friend class ::godot::GDExtensionBinding;
 
 public:
 	struct ClassInfo {
@@ -119,7 +119,7 @@ private:
 		if constexpr (!std::is_abstract_v<T>) {
 			Wrapped::_set_construct_info<T>();
 #if GODOT_VERSION_MINOR >= 4
-			T *new_object = new ("", "") T;
+			T *new_object = new (::godot::DefaultAllocator{}) T;
 			if (p_notify_postinitialize) {
 				new_object->_postinitialize();
 			}
@@ -136,10 +136,7 @@ private:
 	static GDExtensionClassInstancePtr _recreate_instance_func(void *data, GDExtensionObjectPtr obj) {
 		if constexpr (!std::is_abstract_v<T>) {
 #ifdef HOT_RELOAD_ENABLED
-#ifdef _GODOT_CPP_AVOID_THREAD_LOCAL
-			std::lock_guard<std::recursive_mutex> lk(Wrapped::_constructing_mutex);
-#endif
-			Wrapped::_constructing_recreate_owner = obj;
+			Wrapped::_get_construct_info().recreate_owner = obj;
 			T *new_instance = (T *)memalloc(sizeof(T));
 			memnew_placement(new_instance, T);
 			return new_instance;

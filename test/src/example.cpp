@@ -12,6 +12,7 @@
 #include <godot_cpp/classes/multiplayer_api.hpp>
 #include <godot_cpp/classes/multiplayer_peer.hpp>
 #include <godot_cpp/classes/os.hpp>
+#include <godot_cpp/classes/scene_tree.hpp>
 #include <godot_cpp/variant/utility_functions.hpp>
 
 using namespace godot;
@@ -266,6 +267,7 @@ void Example::_bind_methods() {
 	GDVIRTUAL_BIND(_do_something_virtual_with_control, "control");
 
 	ClassDB::bind_method(D_METHOD("test_use_engine_singleton"), &Example::test_use_engine_singleton);
+	ClassDB::bind_method(D_METHOD("test_use_scene_tree_singleton"), &Example::test_use_scene_tree_singleton);
 
 	ClassDB::bind_method(D_METHOD("test_get_internal_class"), &Example::test_get_internal_class);
 
@@ -759,6 +761,11 @@ String Example::test_use_engine_singleton() const {
 	return OS::get_singleton()->get_name();
 }
 
+bool Example::test_use_scene_tree_singleton() const {
+	SceneTree *scene_tree = SceneTree::get_singleton();
+	return scene_tree != nullptr && scene_tree == get_tree();
+}
+
 String Example::test_library_path() {
 	String library_path;
 	::godot::gdextension_interface::get_library_path(::godot::gdextension_interface::library, library_path._native_ptr());
@@ -815,4 +822,26 @@ void ExampleInternal::_bind_methods() {
 
 int ExampleInternal::get_the_answer() const {
 	return 42;
+}
+
+void ExampleThreadSafeClass::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("test"), &ExampleThreadSafeClass::test);
+	ClassDB::bind_method(D_METHOD("test_const"), &ExampleThreadSafeClass::test_const);
+	ClassDB::bind_method(D_METHOD("test_manual"), &ExampleThreadSafeClass::test_manual);
+}
+
+int ExampleThreadSafeClass::test() {
+	_THREAD_SAFE_METHOD_
+	return 123;
+}
+
+int ExampleThreadSafeClass::test_const() const {
+	_THREAD_SAFE_METHOD_
+	return 456;
+}
+
+int ExampleThreadSafeClass::test_manual() {
+	_THREAD_SAFE_LOCK_
+	_THREAD_SAFE_UNLOCK_
+	return 789;
 }

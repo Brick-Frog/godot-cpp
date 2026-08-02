@@ -279,6 +279,9 @@ func _ready():
 	# Test that we can access an engine singleton.
 	assert_equal(example.test_use_engine_singleton(), OS.get_name())
 
+	# Test that we can access the SceneTree singleton.
+	assert_equal(example.test_use_scene_tree_singleton(), true)
+
 	if godot_target_version["minor"] >= 4:
 		assert_equal(example.test_get_internal(1), 1)
 		assert_equal(example.test_get_internal(true), -1)
@@ -309,6 +312,12 @@ func _ready():
 		# Test a class with a unicode name.
 		var przykład = ClassDB.instantiate("ExamplePrzykład")
 		assert_equal(przykład.get_the_word(), "słowo to przykład")
+
+	# Test call some methods on a thread safe class.
+	var example_thread_safe = ExampleThreadSafeClass.new()
+	assert_equal(example_thread_safe.test(), 123)
+	assert_equal(example_thread_safe.test_const(), 456)
+	assert_equal(example_thread_safe.test_manual(), 789)
 
 	exit_with_status()
 

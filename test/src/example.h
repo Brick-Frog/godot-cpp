@@ -21,6 +21,7 @@
 #include <godot_cpp/classes/tile_set.hpp>
 #include <godot_cpp/classes/tween.hpp>
 #include <godot_cpp/classes/viewport.hpp>
+#include <godot_cpp/templates/mutex.hpp>
 #include <godot_cpp/variant/variant.hpp>
 #include <godot_cpp/variant/variant_internal.hpp>
 
@@ -214,6 +215,7 @@ public:
 	GDVIRTUAL1(_do_something_virtual_with_control, Control *);
 
 	String test_use_engine_singleton() const;
+	bool test_use_scene_tree_singleton() const;
 
 	static String test_library_path();
 
@@ -312,4 +314,18 @@ protected:
 
 public:
 	int get_the_answer() const;
+};
+
+class ExampleThreadSafeClass : public RefCounted {
+	GDCLASS(ExampleThreadSafeClass, RefCounted);
+
+	_THREAD_SAFE_CLASS_
+
+protected:
+	static void _bind_methods();
+
+public:
+	int test();
+	int test_const() const;
+	int test_manual();
 };
