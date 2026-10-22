@@ -1,3 +1,4 @@
+import ar_tempfile
 import common_compiler_flags
 from SCons.Tool import clang, clangxx
 from SCons.Variables import BoolVariable
@@ -42,14 +43,26 @@ def generate(env):
         env.Append(CCFLAGS=["-march=rv64gc"])
         env.Append(LINKFLAGS=["-march=rv64gc"])
 
+    env.Append(LINKFLAGS=["-Wl,--gc-sections"])
+
     # Link statically for portability
     if env["use_static_cpp"]:
-        env.Append(LINKFLAGS=["-static-libgcc", "-static-libstdc++"])
+        env.Append(
+            LINKFLAGS=[
+                "-static-libgcc",
+                "-static-libstdc++",
+                "-Wl,--gc-sections",
+                "-Wl,--exclude-libs=libstdc++.a:libgcc.a:libgcc_eh.a",
+            ]
+        )
 
     env.Append(CPPDEFINES=["LINUX_ENABLED", "UNIX_ENABLED"])
 
     # Refer to https://github.com/godotengine/godot/blob/master/platform/linuxbsd/detect.py
     if env["lto"] == "auto":
         env["lto"] = "full"
+
+    # Configure ARCOM response file in case the command line call to AR is too long.
+    ar_tempfile.configure(env)
 
     common_compiler_flags.generate(env)

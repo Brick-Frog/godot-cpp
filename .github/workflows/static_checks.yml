@@ -9,7 +9,7 @@ concurrency:
 jobs:
   static-checks:
     name: Format (clang-format, ruff format, file format)
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -21,6 +21,6 @@ jobs:
         uses: tj-actions/changed-files@v47
 
       - name: Style checks via prek
-        uses: j178/prek-action@v2
+        uses: j178/prek-action@v3.0.1
         with:
           extra-args: --verbose --hook-stage manual --files ${{ steps.changed-files.outputs.all_changed_files }}

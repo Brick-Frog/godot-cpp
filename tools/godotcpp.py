@@ -162,6 +162,8 @@ def scons_generate_bindings(target, source, env):
 
     api = generate_trimmed_api(str(source[0]), profile_filepath)
 
+    binding_hooks = env.get("binding_hooks", None)
+
     _generate_bindings(
         api,
         str(source[0]),
@@ -170,14 +172,12 @@ def scons_generate_bindings(target, source, env):
         "32" if "32" in env["arch"] else "64",
         env["precision"],
         env["godot_cpp_gen_dir"],
+        binding_hooks,
     )
     return None
 
 
-supported_api_versions = ["4.3", "4.4", "4.5", "4.6", "4.7"]
-
-# We default to the latest stable Godot version.
-default_api_version = "4.7"
+supported_api_versions = ["4.3", "4.4", "4.5", "4.6", "4.7", "4.8"]
 
 platforms = ["linux", "macos", "windows", "android", "ios", "web"]
 
@@ -243,7 +243,7 @@ def options(opts, env):
 
     opts.Add(
         EnumVariable(
-            key="platform",
+            key=("platform", "p"),
             help="Target platform",
             default=env.get("platform", default_platform),
             allowed_values=platforms + custom_platforms,
@@ -393,6 +393,7 @@ def options(opts, env):
         )
     )
     opts.Add(BoolVariable("debug_symbols", "Build with debugging symbols", True))
+    opts.Add(BoolVariable("production", "Set defaults to build godot-cpp for use in production", False))
     opts.Add(BoolVariable("deprecated", "Enable compatibility code for deprecated and removed features", True))
     opts.Add(BoolVariable("dev_build", "Developer build with dev-only debugging code (DEV_ENABLED)", False))
     opts.Add(BoolVariable("verbose", "Enable verbose output for the compilation", False))
@@ -466,6 +467,13 @@ def generate(env):
 
     env["optimize"] = ARGUMENTS.get("optimize", opt_level)
     env["debug_symbols"] = get_cmdline_bool("debug_symbols", env.dev_build)
+
+    if env["production"]:
+        if "use_static_cpp" in env:
+            env["use_static_cpp"] = get_cmdline_bool("use_static_cpp", True)
+        env["debug_symbols"] = get_cmdline_bool("debug_symbols", False)
+        # LTO "auto" means we handle the preferred option in each platform tool.
+        env["lto"] = ARGUMENTS.get("lto", "auto")
 
     tool = Tool(env["platform"], toolpath=get_platform_tools_paths(env))
 
@@ -549,22 +557,30 @@ def generate(env):
     env.AddMethod(_godot_cpp, "GodotCPP")
 
 
-def _get_api_file(extension_dir, api_version):
-    if api_version is None or api_version == default_api_version:
-        return os.path.join(extension_dir, "extension_api.json")
+def _get_api_file(extension_dir, api_version, custom_extension_dir):
+    if custom_extension_dir:
+        filename = "extension_api.json"
+    else:
+        if api_version is None:
+            raise UserError("'api_version' must be provided")
+        if api_version not in supported_api_versions:
+            raise UserError("Unsupported 'api_version': %s" % api_version)
+        filename = "extension_api-%s.json" % api_version.replace(".", "-")
 
-    filename = "extension_api-%s.json" % api_version.replace(".", "-")
     path = os.path.join(extension_dir, filename)
     if not os.path.exists(path):
-        raise UserError("Cannot find `%s` file for api_version %s" % (filename, api_version))
+        raise UserError("Cannot find `%s` file" % filename)
 
     return path
 
 
 def _godot_cpp(env):
     extension_dir = normalize_path(env.get("gdextension_dir", default=env.Dir("gdextension").srcnode().abspath), env)
-    default_api_file = _get_api_file(extension_dir, env.get("api_version", None))
-    api_file = normalize_path(env.get("custom_api_file", default=default_api_file), env)
+
+    api_file = env.get("custom_api_file", None)
+    if api_file is None:
+        api_file = _get_api_file(extension_dir, env.get("api_version", None), "gdextension_dir" in env)
+    api_file = normalize_path(api_file, env)
 
     bindings = env.GodotCPPBindings(
         env.Dir("."),
@@ -585,6 +601,7 @@ def _godot_cpp(env):
         *env.Glob("src/*.cpp"),
         *env.Glob("src/classes/*.cpp"),
         *env.Glob("src/core/*.cpp"),
+        *env.Glob("src/templates/*.cpp"),
         *env.Glob("src/variant/*.cpp"),
         *tuple(f for f in bindings if str(f).endswith(".cpp")),
     ]

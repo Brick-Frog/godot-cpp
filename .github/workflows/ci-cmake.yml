@@ -7,6 +7,8 @@ env:
   GODOT_BASE_BRANCH: master
   # Used to select the version of Godot to run the tests with.
   GODOT_TEST_VERSION: master
+  # The Godot API version to build against.
+  DEFAULT_API_VERSION: "4.8"
   # Use UTF-8 on Linux.
   LANG: en_US.UTF-8
   LC_ALL: en_US.UTF-8
@@ -33,7 +35,7 @@ jobs:
       matrix:
         include:
           - name: 🐧 Linux (GCC, Makefiles)
-            os: ubuntu-22.04
+            os: ubuntu-24.04
             platform: linux
             config-flags: -DCMAKE_BUILD_TYPE=Release
             artifact-name: godot-cpp-linux-glibc2.27-x86_64-release.cmake
@@ -69,7 +71,7 @@ jobs:
             run-tests: false
 
           - name: 🤖 Android (arm64, Ninja)
-            os: ubuntu-22.04
+            os: ubuntu-24.04
             platform: android
             config-flags:
               -G Ninja -DCMAKE_BUILD_TYPE=Release
@@ -94,7 +96,7 @@ jobs:
             run-tests: false
 
           - name: 🌐 Web (wasm32, Ninja)
-            os: ubuntu-22.04
+            os: ubuntu-24.04
             platform: web
             config-flags:
               -G Ninja  -DCMAKE_BUILD_TYPE=Release
@@ -110,7 +112,7 @@ jobs:
           submodules: recursive
 
       - name: Run sccache-cache
-        uses: mozilla-actions/sccache-action@v0.0.10
+        uses: mozilla-actions/sccache-action@v0.0.11
 
       - name: Setup godot-cpp
         uses: ./.github/actions/setup-godot-cpp
@@ -121,7 +123,7 @@ jobs:
 
       - name: Configure godot-cpp-test with template_debug
         run: >
-          cmake --log-level=VERBOSE -S . -B cmake-build ${{ env.config-flags }} ${{ matrix.config-flags }}
+          cmake --log-level=VERBOSE -S . -B cmake-build '-DGODOTCPP_API_VERSION=${{ env.DEFAULT_API_VERSION }}' ${{ env.config-flags }} ${{ matrix.config-flags }}
 
       - name: Build godot-cpp-test (template_debug)
         run: >
@@ -129,8 +131,7 @@ jobs:
 
       - name: Configure godot-cpp-test with template_release
         run: >
-          cmake --fresh --log-level=VERBOSE -S . -B cmake-build
-          -DGODOTCPP_TARGET=template_release ${{ env.config-flags }} ${{ matrix.config-flags }}
+          cmake --fresh --log-level=VERBOSE -S . -B cmake-build -DGODOTCPP_TARGET=template_release '-DGODOTCPP_API_VERSION=${{ env.DEFAULT_API_VERSION }}' ${{ env.config-flags }} ${{ matrix.config-flags }}
 
       - name: Build godot-cpp-test (template_release)
         run: >

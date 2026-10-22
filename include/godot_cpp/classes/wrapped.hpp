@@ -135,7 +135,7 @@ protected:
 	virtual ~Wrapped() {}
 
 public:
-	static const StringName &get_class_static() {
+	static _NO_INLINE_ const StringName &get_class_static() {
 		static const StringName string_name = StringName("Wrapped");
 		return string_name;
 	}
@@ -199,7 +199,7 @@ struct EngineClassRegistration {
 // every line of the macro different
 #define GDCLASS(m_class, m_inherits) \
 private: \
-	void operator=(const m_class & /*p_rval*/) {} \
+	void operator=(const m_class &p_rval) = delete; \
 	friend class ::godot::ClassDB; \
 	friend class ::godot::Wrapped; \
 \
@@ -271,7 +271,7 @@ public: \
 		initialized = true; \
 	} \
 \
-	static const ::godot::StringName &get_class_static() { \
+	static _NO_INLINE_ const ::godot::StringName &get_class_static() { \
 		static const ::godot::StringName string_name = ::godot::StringName(U## #m_class); \
 		return string_name; \
 	} \
@@ -428,7 +428,7 @@ private:
 #define GDEXTENSION_CLASS_ALIAS(m_class, m_alias_for, m_inherits) \
 private: \
 	inline static ::godot::internal::EngineClassRegistration<m_class> _gde_engine_class_registration_helper; \
-	void operator=(const m_class &p_rval) {} \
+	void operator=(const m_class &p_rval) = delete; \
 	friend class ::godot::ClassDB; \
 	friend class ::godot::Wrapped; \
 \
@@ -484,7 +484,7 @@ public: \
 \
 	static void initialize_class() {} \
 \
-	static const ::godot::StringName &get_class_static() { \
+	static _NO_INLINE_ const ::godot::StringName &get_class_static() { \
 		static const ::godot::StringName string_name = ::godot::StringName(#m_alias_for); \
 		return string_name; \
 	} \

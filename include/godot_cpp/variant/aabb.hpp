@@ -60,10 +60,15 @@ struct [[nodiscard]] AABB {
 	const Vector3 &get_size() const { return size; }
 	void set_size(const Vector3 &p_size) { size = p_size; }
 
-	bool operator==(const AABB &p_rval) const;
-	bool operator!=(const AABB &p_rval) const;
+	constexpr bool operator==(const AABB &p_rval) const {
+		return position == p_rval.position && size == p_rval.size;
+	}
+	constexpr bool operator!=(const AABB &p_rval) const {
+		return position != p_rval.position || size != p_rval.size;
+	}
 
 	bool is_equal_approx(const AABB &p_aabb) const;
+	bool is_same(const AABB &p_aabb) const;
 	bool is_finite() const;
 	_FORCE_INLINE_ bool intersects(const AABB &p_aabb) const; /// Both AABBs overlap
 	_FORCE_INLINE_ bool intersects_inclusive(const AABB &p_aabb) const; /// Both AABBs (or their faces) overlap
@@ -128,12 +133,16 @@ struct [[nodiscard]] AABB {
 		return position + (size * 0.5f);
 	}
 
-	operator String() const;
+	explicit operator String() const;
 
-	_FORCE_INLINE_ AABB() {}
-	inline AABB(const Vector3 &p_pos, const Vector3 &p_size) :
+	AABB() = default;
+	constexpr AABB(const Vector3 &p_pos, const Vector3 &p_size) :
 			position(p_pos),
 			size(p_size) {
+	}
+	constexpr AABB(real_t p_pos_x, real_t p_pos_y, real_t p_pos_z, real_t p_size_x, real_t p_size_y, real_t p_size_z) :
+			position(p_pos_x, p_pos_y, p_pos_z),
+			size(p_size_x, p_size_y, p_size_z) {
 	}
 };
 
@@ -273,10 +282,10 @@ bool AABB::intersects_convex_shape(const Plane *p_planes, int p_plane_count, con
 
 	for (int k = 0; k < 3; k++) {
 		for (int i = 0; i < p_point_count; i++) {
-			if (p_points[i].coord[k] > ofs.coord[k] + half_extents.coord[k]) {
+			if (p_points[i][k] > ofs[k] + half_extents[k]) {
 				bad_point_counts_positive[k]++;
 			}
-			if (p_points[i].coord[k] < ofs.coord[k] - half_extents.coord[k]) {
+			if (p_points[i][k] < ofs[k] - half_extents[k]) {
 				bad_point_counts_negative[k]++;
 			}
 		}
@@ -497,4 +506,6 @@ AABB AABB::quantized(real_t p_unit) const {
 	return ret;
 }
 
+template <>
+struct is_zero_constructible<AABB> : std::true_type {};
 } // namespace godot

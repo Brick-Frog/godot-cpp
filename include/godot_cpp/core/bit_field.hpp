@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  search_array.hpp                                                      */
+/*  bit_field.hpp                                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -30,39 +30,21 @@
 
 #pragma once
 
-#include <godot_cpp/templates/sort_array.hpp>
+#include <godot_cpp/variant/variant.hpp>
 
 namespace godot {
 
-template <typename T, typename Comparator = _DefaultComparator<T>>
-class SearchArray {
-public:
-	Comparator compare;
+template <typename T>
+class BitField {
+	int64_t value = 0;
 
-	inline int64_t bisect(const T *p_array, int64_t p_len, const T &p_value, bool p_before) const {
-		int64_t lo = 0;
-		int64_t hi = p_len;
-		if (p_before) {
-			while (lo < hi) {
-				const int64_t mid = (lo + hi) / 2;
-				if (compare(p_array[mid], p_value)) {
-					lo = mid + 1;
-				} else {
-					hi = mid;
-				}
-			}
-		} else {
-			while (lo < hi) {
-				const int64_t mid = (lo + hi) / 2;
-				if (compare(p_value, p_array[mid])) {
-					hi = mid;
-				} else {
-					lo = mid + 1;
-				}
-			}
-		}
-		return lo;
-	}
+public:
+	_FORCE_INLINE_ void set_flag(T p_flag) { value |= p_flag; }
+	_FORCE_INLINE_ bool has_flag(T p_flag) const { return value & p_flag; }
+	_FORCE_INLINE_ void clear_flag(T p_flag) { value &= ~p_flag; }
+	_FORCE_INLINE_ BitField(int64_t p_value) { value = p_value; }
+	_FORCE_INLINE_ operator int64_t() const { return value; }
+	_FORCE_INLINE_ operator Variant() const { return value; }
 };
 
 } // namespace godot
